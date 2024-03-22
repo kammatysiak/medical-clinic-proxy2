@@ -1,0 +1,54 @@
+version: '3'
+services:
+  medical-clinic:
+    depends_on:
+      - db
+    image: medicalclinic-medical-clinic
+    ports:
+      - "8880:8880"
+    environment:
+      spring_datasource_url: jdbc:postgresql://db:5432/postgres
+    networks:
+      - medical-clinic-network
+  db:
+    image: postgres:latest
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: km
+      POSTGRES_PASSWORD: km1234
+    volumes:
+      - postgres-volume:/data
+    networks:
+      - medical-clinic-network
+  pgadmin:
+    image: dpage/pgadmin4
+    restart: always
+    container_name: pgadmin4_container
+    ports:
+      - "8889:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: user@gmail.com
+      PGADMIN_DEFAULT_PASSWORD: sa1234
+    volumes:
+      - pgadmin-data:/var/lib/pgadmin
+    networks:
+      - medical-clinic-network
+  medical-clinic-proxy:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8081:8081"
+    environment:
+      spring.cloud.openfeign.client.config.MedicalClinicClient.url: http://medical-clinic:8880/
+    networks:
+     - medical-clinic-network
+volumes:
+  postgres-volume:
+  local_pgdata:
+  pgadmin-data:
+networks:
+  medical-clinic-network:
+    driver: bridge
